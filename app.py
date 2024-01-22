@@ -1,4 +1,6 @@
-from flask import Flask, render_template, redirect, url_for, request
+import uuid
+from datetime import datetime
+from flask import Flask, render_template, redirect, url_for, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -12,22 +14,63 @@ class Class(db.Model):
     secret_code = db.Column(db.String(20), nullable=True)
     course_code = db.Column(db.Integer, nullable=True)
     course_class = db.Column(db.String(20), nullable=True)
+    unique_link = db.Column(db.String(100), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+
+class Attendance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    course_code = db.Column(db.String(50))
+    course_class = db.Column(db.String(50))
+    emp = db.Column(db.Integer)
+    matricula = db.Column(db.String(50))
+    date = db.Column(db.DateTime, default=db.func.current_timestamp())
 
 @app.route('/admin')
 def admin():
     classes = Class.query.all()
-    return render_template('admin.html', classes=classes)
+    class_attendance_counts = db.session.query(
+        Class.course_code,
+        Class.course_class,
+        db.func.count(Attendance.matricula)
+    ).outerjoin(
+        Attendance,
+        db.and_(Class.course_code == Attendance.course_code, Class.course_class == Attendance.course_class)
+    ).group_by(Class.course_code, Class.course_class).all()
+
+    # Convert class_attendance_counts to a dictionary for easy access in the template
+    attendance_dict = {(course_code, course_class): count for course_code, course_class, count in class_attendance_counts}
+
+    return render_template('admin.html', classes=classes, attendance_dict=attendance_dict)
+
 
 @app.route('/add_class', methods=['GET', 'POST'])
 def add_class():
     if request.method == 'POST':
         class_name = request.form['name']
         secret_code = request.form['secret']
-        new_class = Class(name=class_name, secret_code=secret_code)
+        course_code = request.form['course_code']
+        course_class = request.form['course_class']
+        new_class = Class(name=class_name, secret_code=secret_code, course_code=course_code, course_class=course_class)
         db.session.add(new_class)
         db.session.commit()
         return redirect(url_for('admin'))
     return render_template('add_class.html')
+
+@app.route('/attend/<unique_link>', methods=['GET', 'POST'])
+def attend(unique_link):
+    course = Class.query.filter_by(unique_link=unique_link).first_or_404()
+    if request.method == 'POST':
+        matricula = request.form['matricula']
+        email = request.form['email']  # Assuming you want to capture the email
+        secret = request.form['secret']
+        if secret == course.secret_code:
+            attendance = Attendance(course_code=course.id, course_class=course.name, emp=1, matricula=matricula)
+            db.session.add(attendance)
+            db.session.commit()
+            # Format the response as needed
+            return jsonify({"message": "Attendance registered successfully"})
+        else:
+            return jsonify({"error": "Invalid secret code"}), 400
+    return render_template('attendance_form.html', course=course)
 
 #if __name__ == '__main__':
 with app.app_context():
