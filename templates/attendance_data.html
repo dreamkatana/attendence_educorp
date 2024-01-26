@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attendance Data</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <!-- Add at the beginning of the body in attendance_data.html -->
+<h2>Attendance for Course: {{ course_code }}, Class: {{ course_class }}</h2>
+    <table>
+        <tr>
+            <th>Course Code</th>
+            <th>Course Class</th>
+            <th>EMP</th>
+            <th>Matricula</th>
+            <th>Email</th>
+            <th>Date</th>         
+        </tr>
+        {% for attendance in attendances %}
+            <tr>
+                <td>{{ attendance.course_code }}</td>
+                <td>{{ attendance.course_class }}</td>
+                <td>{{ attendance.emp }}</td>
+                <td>{{ attendance.matricula }}</td>
+                <td>{{ attendance.email }}</td>
+                <td>{{ attendance.date.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

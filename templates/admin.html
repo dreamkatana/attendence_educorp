@@ -8,9 +8,13 @@
     <a href="{{ url_for('add_class') }}">Add New Class</a>
     <ul>
         {% for cls in classes %}
-            <li>COD: {{ cls.course_code }} - Turma: {{ cls.course_class }}</li>
-            <li>{{ cls.name }} - Secret Code: {{ cls.secret_code }}</li> - <a href="{{ url_for('attend', unique_link=cls.unique_link) }}" target="_blank">Attendance Link</a>
-            - Attendance Count: {{ attendance_dict.get((cls.course_code, cls.course_class), 0) }}
+            <li>
+                COD: {{ cls.course_code }} - Turma: {{ cls.course_class }}
+                {{ cls.name }} - Secret Code: {{ cls.secret_code }}
+                - Attendance Count: {{ attendance_dict.get((cls.course_code, cls.course_class), 0) }}
+                - <a href="{{ url_for('attend', unique_link=cls.unique_link) }}" target="_blank">Attendance Link</a>
+                - <a href="{{ url_for('filtered_attendance_data', course_code=cls.course_code, course_class=cls.course_class) }}">View Attendance</a>
+            </li>
         {% endfor %}
     </ul>
 </body>

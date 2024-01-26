@@ -21,7 +21,8 @@ class Attendance(db.Model):
     course_code = db.Column(db.String(50))
     course_class = db.Column(db.String(50))
     emp = db.Column(db.Integer)
-    matricula = db.Column(db.String(50))
+    matricula = db.Column(db.Integer)
+    email = db.Column(db.String(100))
     date = db.Column(db.DateTime, default=db.func.current_timestamp())
 
 @app.route('/admin')
@@ -63,7 +64,7 @@ def attend(unique_link):
         email = request.form['email']  # Assuming you want to capture the email
         secret = request.form['secret']
         if secret == course.secret_code:
-            attendance = Attendance(course_code=course.id, course_class=course.name, emp=1, matricula=matricula)
+            attendance = Attendance(course_code=course.course_code, course_class=course.course_class, emp=1, matricula=matricula, email=email)
             db.session.add(attendance)
             db.session.commit()
             # Format the response as needed
@@ -71,6 +72,12 @@ def attend(unique_link):
         else:
             return jsonify({"error": "Invalid secret code"}), 400
     return render_template('attendance_form.html', course=course)
+
+@app.route('/attendance_data/<course_code>/<course_class>')
+def filtered_attendance_data(course_code, course_class):
+    attendances = Attendance.query.filter_by(course_code=course_code, course_class=course_class).all()
+    return render_template('attendance_data.html', attendances=attendances, course_code=course_code, course_class=course_class)
+
 
 #if __name__ == '__main__':
 with app.app_context():
