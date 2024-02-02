@@ -1,7 +1,8 @@
 import uuid
-from datetime import datetime
-from flask import Flask, render_template, redirect, url_for, request, jsonify
+import csv
+from flask import Flask, render_template, redirect, url_for, request, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
+from io import StringIO
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///attendance.db'
@@ -77,6 +78,36 @@ def attend(unique_link):
 def filtered_attendance_data(course_code, course_class):
     attendances = Attendance.query.filter_by(course_code=course_code, course_class=course_class).all()
     return render_template('attendance_data.html', attendances=attendances, course_code=course_code, course_class=course_class)
+
+@app.route('/export_attendance_csv/<course_code>/<course_class>')
+def export_attendance_csv(course_code, course_class):
+    # Filter attendance records by course_code and course_class
+    attendances = Attendance.query.filter_by(course_code=course_code, course_class=course_class).all()
+
+    def generate():
+        data = StringIO()
+        csv_writer = csv.writer(data)
+
+        # Write the header
+        csv_writer.writerow(["01", "CURSO", "TURMA", "EMP", "MATRICULA", "DATA"])
+
+        # Write the data rows
+        for attendance in attendances:
+            csv_writer.writerow([
+                "02",
+                attendance.course_code,
+                attendance.course_class,
+                "1",  # EMP is always 1
+                attendance.matricula,
+                attendance.date.strftime('%d/%m/%Y')  # Format the date
+            ])
+            data.seek(0)
+            yield data.read()
+            data.seek(0)
+            data.truncate(0)
+
+    # Generate the CSV file
+    return Response(generate(), mimetype='text/csv', headers={"Content-Disposition": f"attachment;filename=attendance_data_{course_code}_{course_class}.csv"})
 
 
 #if __name__ == '__main__':

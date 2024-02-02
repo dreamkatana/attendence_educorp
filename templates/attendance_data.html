@@ -22,6 +22,8 @@
 <body>
     <!-- Add at the beginning of the body in attendance_data.html -->
 <h2>Attendance for Course: {{ course_code }}, Class: {{ course_class }}</h2>
+<h3>Download link: <a href="{{ url_for('export_attendance_csv', course_code=course_code, course_class=course_class) }}">Baixar CSV</a>
+</h3>
     <table>
         <tr>
             <th>Course Code</th>
